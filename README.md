@@ -1,9 +1,10 @@
 # Onyx-ArtificerPlus
 
-- holding attack is now the same speed as spamming it
+- holding attack is now the same speed as spamming it (default:disabled)
 - gave Artificer a weak hover when Jump is held
-- decreased tectonic surge cooldown and increased surge distance
+- decreased tectonic surge cooldown and increased surge distance (default: disabled)
 - localised sun now has different speed depending on if the special button is held
+- The buffs can be toggled in the mod gui
 - fix nanospear firing when pulsing it while having another charge
 
 ## Special Thanks To
