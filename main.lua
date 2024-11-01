@@ -1,7 +1,17 @@
--- ArtificerPlus v1.1
+-- ArtificerPlus v1.2
 -- Onyx
 log.info("Successfully loaded " .. _ENV["!guid"] .. ".")
+params = {}
 mods["RoRRModdingToolkit-RoRR_Modding_Toolkit"].auto()
+mods.on_all_mods_loaded(function() for k, v in pairs(mods) do if type(v) == "table" and v.tomlfuncs then Toml = v end end 
+    params = {
+        Hover = true,
+        Rapidfire = false,
+        SurgeBuff = false,
+        SunControl = true
+    }
+    params = Toml.config_update(_ENV["!guid"], params) -- Load Save
+end)
 
 artistar = {}
 StarCount = 0
@@ -18,30 +28,33 @@ Initialize(function()
         local artiC2 = Skill.find("ror-artiC2")
         local artiV2 = Skill.find("ror-artiV2")
         local artiV2Boosted = Skill.find("ror-artiV2Boosted")
-        artiC2.cooldown = 480.0
-        --artiV2.cooldown = 300.0
-        --artiV2Boosted.cooldown = 300.0
         artiV2.allow_buffered_input = true
         artiV2Boosted.allow_buffered_input = true
 
-        local speed_multi = 2.0
-        gm.sprite_set_speed(gm.constants.sArtiShoot1_1A, speed_multi, 1)
-        gm.sprite_set_speed(gm.constants.sArtiShoot1_2A, speed_multi, 1)
-        gm.sprite_set_speed(gm.constants.sArtiShoot1_1B, speed_multi, 1)
-        gm.sprite_set_speed(gm.constants.sArtiShoot1_2B, speed_multi, 1)
+        if params.SurgeBuff then
+            artiC2.cooldown = 480.0
+        end
+
+        if params.Rapidfire then
+            local speed_multi = 2.0
+            gm.sprite_set_speed(gm.constants.sArtiShoot1_1A, speed_multi, 1)
+            gm.sprite_set_speed(gm.constants.sArtiShoot1_2A, speed_multi, 1)
+            gm.sprite_set_speed(gm.constants.sArtiShoot1_1B, speed_multi, 1)
+            gm.sprite_set_speed(gm.constants.sArtiShoot1_2B, speed_multi, 1)
+        end
     end)
 
     Artificer:onStep(function(inst)
         self = inst.value
 
         -- Hover
-        if self.moveUpHold == 1.0 and self.pVspeed > 0.0 then
+        if self.moveUpHold == 1.0 and self.pVspeed > 0.0 and params.Hover then
             self.pVspeed = self.pVspeed * 0.9
         end
 
         -- hold special to slow down + artistar control
         for i = 0, 4 do
-            if artistar[i] ~= nil then
+            if artistar[i] ~= nil and params.SunControl then
                 if self.v_skill_buffered > 0.0 then
                     self.pHspeed = 0.0
                     artistar[i].pMmax = 6
@@ -56,9 +69,6 @@ Initialize(function()
         artiX2.required_stock = 1 
     end)
 end)
---__initialize = function()
-    
---end
 
 -- increase surge distance
 gm.post_script_hook(gm.constants._skill_system_update_skill_used, function(self, other, result, args)
@@ -83,17 +93,27 @@ gm.post_script_hook(gm.constants.instance_create_depth, function(self, other, re
                 artiX2.required_stock = 1
             end
         end
-        Alarm.create(ResetSpear, 30)
+        Alarm.create(ResetSpear, 45)
     end
-end)
-
--- arti star better control
-gm.post_script_hook(gm.constants.instance_create_depth, function(self, other, result, args)
-    if result.value.object_index == gm.constants.oEfArtiStar then
+    -- arti star better control
+    if result.value.object_index == gm.constants.oEfArtiStar and params.SunControl then
         artistar[StarCount] = result.value
         StarCount = StarCount + 1
         if StarCount > 3 then
             StarCount = 0
         end
     end
+    --oArtiPlatform
+end)
+
+-- Add ImGui window
+gui.add_imgui(function()
+    if ImGui.Begin("ArtificerPlus") then
+        params.Hover = ImGui.Checkbox("Arti Hover", params.Hover)
+        params.Rapidfire = ImGui.Checkbox("Rapidfire", params.Rapidfire)
+        params.SurgeBuff = ImGui.Checkbox("Buff Arti Surge", params.SurgeBuff)
+        params.SunControl = ImGui.Checkbox("Hold special to control arti sun", params.SunControl)
+        Toml.save_cfg(_ENV["!guid"], params)
+    end
+    ImGui.End()
 end)
